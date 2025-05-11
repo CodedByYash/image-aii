@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "app/generated/prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ModelTrainingStatusEnum {
+  Pending
+  Generated
+  Failed
+}
+
+enum OutputImageStatusEnum {
+  Pending
+  Generated
+  Failed
+}
+
+enum PlanType {
+  basic
+  premium
+}
+
+enum ModelTypeEnum {
+  Man
+  Woman
+  Others
+}
+
+enum EthenecityEnum {
+  White
+  Black
+  Asian_American   @map("Asian American")
+  East_Asian       @map("East Asian")
+  South_East_Asian @map("South East Asian")
+  South_Asian      @map("South Asian")
+  Middle_Eastern   @map("Middle Eastern")
+  Pacific
+  Hispanic
+}
+
+enum EyeColorEnum {
+  Brown
+  Blue
+  Hazel
+  Gray
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id             String   @id @default(uuid())
+  clerkId        String   @unique
+  email          String   @unique
+  name           String?
+  profilePicture String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Model {
+  id             String                  @id @default(uuid())
+  name           String
+  age            Int
+  bald           Boolean
+  userId         String
+  triggerWord    String?
+  tensorPath     String?
+  zipUrl         String
+  falAiRequestId String?
+  ethinicity     EthenecityEnum
+  eyeColor       EyeColorEnum
+  type           ModelTypeEnum
+  outputImages   OutputImages[]
+  trainingStatus ModelTrainingStatusEnum @default(Pending)
+
+  @@index([falAiRequestId])
+}
+
+model OutputImages {
+  id             String                @id @default(uuid())
+  imageUrl       String                @default("")
+  modelId        String
+  userId         String
+  prompt         String
+  falAiRequestId String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  status         OutputImageStatusEnum @default(Pending)
+  model          Model                 @relation(fields: [modelId], references: [id])
+
+  @@index([falAiRequestId])
+}
+
+model Packs {
+  id      String        @id @default(uuid())
+  name    String
+  prompts PackPrompts[]
+}
+
+model PackPrompts {
+  id     String @id @default(uuid())
+  prompt String
+  packId String
+  pack   Packs  @relation(fields: [packId], references: [id])
+}
