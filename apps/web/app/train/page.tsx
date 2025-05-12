@@ -1,4 +1,7 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,9 +22,52 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { UploadModal } from "@/components/ui/upload";
-import * as React from "react";
+import { TrainModelInput } from "common/inferred";
+import axios from "axios";
+import { BACKEND_URL } from "app/config";
+import { useAuth } from "@clerk/nextjs";
 
 export default function Train() {
+  const [zipUrl, setZipUrl] = useState("");
+  const [type, setType] = useState<"Man" | "Woman" | "Others">("Man");
+  const [age, setAge] = useState<string>();
+  const [ethinicity, setEthinicity] = useState<
+    | "White"
+    | "Black"
+    | "Asian_American"
+    | "East_Asian"
+    | "South_East_Asian"
+    | "South_Asian"
+    | "Middle_Eastern"
+    | "Pacific"
+    | "Hispanic"
+  >();
+  const [eyeColor, setEyeColor] = useState<
+    "Brown" | "Blue" | "Hazel" | "Gray"
+  >();
+  const [bald, setBald] = useState(false);
+  const [name, setName] = useState("");
+  const router = useRouter();
+  const { getToken } = useAuth();
+
+  async function trainModel() {
+    const input: TrainModelInput = {
+      zipUrl,
+      type,
+      age: parseInt(age ?? "0"),
+      ethinicity: ethinicity ?? "White",
+      eyeColor: eyeColor ?? "Brown",
+      bald,
+      name,
+    };
+    const token = await getToken();
+    const response = await axios.post(`${BACKEND_URL}/ai/training`, input, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    router.push("/");
+  }
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col items-center py-12 px-2">
       <Card className="w-full max-w-md p-6 rounded-2xl shadow-2xl border border-gray-200 bg-white/90">
@@ -37,28 +83,59 @@ export default function Train() {
           <div className="grid w-full items-center gap-6">
             <div className="flex flex-col space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="Name of the model" />
+              <Input
+                id="name"
+                placeholder="Name of the model"
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
+              />
             </div>
             <div className="flex flex-col space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select>
+              <Select
+                value={type}
+                onValueChange={(value: "Man" | "Woman" | "Others") =>
+                  setType(value)
+                }
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="Men">Men</SelectItem>
-                  <SelectItem value="Women">Women</SelectItem>
+                  <SelectItem value="Man">Man</SelectItem>
+                  <SelectItem value="Woman">Woman</SelectItem>
                   <SelectItem value="Others">Others</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col space-y-2">
               <Label htmlFor="age">Age</Label>
-              <Input id="age" placeholder="Enter your age" />
+              <Input
+                id="age"
+                placeholder="Enter your age"
+                onChange={(e) => {
+                  setAge(e.target.value);
+                }}
+              />
             </div>
             <div className="flex flex-col space-y-2">
               <Label htmlFor="ethenicity">Ethnicity</Label>
-              <Select>
+              <Select
+                value={ethinicity}
+                onValueChange={(
+                  value:
+                    | "White"
+                    | "Black"
+                    | "Asian_American"
+                    | "East_Asian"
+                    | "South_East_Asian"
+                    | "South_Asian"
+                    | "Middle_Eastern"
+                    | "Pacific"
+                    | "Hispanic"
+                ) => setEthinicity(value)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -77,7 +154,12 @@ export default function Train() {
             </div>
             <div className="flex flex-col space-y-2">
               <Label htmlFor="eye">Eye Color</Label>
-              <Select>
+              <Select
+                value={eyeColor}
+                onValueChange={(value: "Brown" | "Blue" | "Hazel" | "Gray") =>
+                  setEyeColor(value)
+                }
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -91,16 +173,39 @@ export default function Train() {
             </div>
             <div className="flex flex-col space-y-2">
               <Label htmlFor="bald">Bald</Label>
-              <Switch id="bald" />
+              <Switch
+                id="bald"
+                onClick={(e) => {
+                  setBald(!bald);
+                }}
+              />
             </div>
             <div className="flex flex-col space-y-2">
-              <UploadModal />
+              <UploadModal
+                onUploadDone={(zipUrl) => {
+                  setZipUrl(zipUrl);
+                }}
+              />
             </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between mt-6">
-          <Button variant="outline">Cancel</Button>
-          <Button>Create Model</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              router.push("/");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => trainModel()}
+            disabled={
+              !zipUrl || !type || !age || !ethinicity || !eyeColor || !bald
+            }
+          >
+            Create Model
+          </Button>
         </CardFooter>
       </Card>
     </div>
