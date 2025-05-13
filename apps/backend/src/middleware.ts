@@ -44,10 +44,11 @@ export async function authMiddleware(
 
     // Format the public key properly
     const formattedKey = publicKey.replace(/\\n/g, "\n");
+    console.log(formattedKey);
 
     const decoded = jwt.verify(token, formattedKey, {
       algorithms: ["RS256"],
-      issuer: process.env.CLERK_ISSUER || "https://clerk.100xdevs.com",
+      issuer: process.env.CLERK_ISSUER,
       complete: true,
     });
 
